@@ -1,0 +1,47 @@
+const router = require("express").Router();
+const ctrl = require("../../controllers/admin/adminController");
+const { protect, adminOnly } = require("../../middleware/auth.middleware");
+
+// ─── Public ───────────────────────────────────────────────
+router.post("/login", ctrl.adminLogin);
+
+// ─── Protected (admin only) ───────────────────────────────
+router.get("/dashboard", protect, adminOnly, ctrl.getDashboardStats);
+router.get("/restaurants", protect, adminOnly, ctrl.getAllRestaurants);
+router.put(
+  "/restaurants/:id/approve",
+  protect,
+  adminOnly,
+  ctrl.approveRestaurant,
+);
+router.put(
+  "/restaurants/:id/reject",
+  protect,
+  adminOnly,
+  ctrl.rejectRestaurant,
+);
+router.put(
+  "/restaurants/:id/subscription",
+  protect,
+  adminOnly,
+  ctrl.updateRestaurantSubscription,
+);
+router.delete("/restaurants/:id", protect, adminOnly, ctrl.deleteRestaurant);
+router.get("/cravings/pending", protect, adminOnly, ctrl.getPendingCravings);
+router.put("/cravings/:id/approve", protect, adminOnly, ctrl.approveCraving);
+router.put("/cravings/:id/reject", protect, adminOnly, ctrl.rejectCraving);
+router.get("/banners/pending", protect, adminOnly, ctrl.getPendingBanners);
+router.put("/banners/:id/approve", protect, adminOnly, ctrl.approveBanner);
+router.put("/banners/:id/reject", protect, adminOnly, ctrl.rejectBanner);
+router.get("/users", protect, adminOnly, ctrl.getAllUsers);
+router.get("/analytics", protect, adminOnly, ctrl.getAnalytics);
+
+//---------------delivery providers---------------
+router.get(
+  "/delivery-providers",
+  protect,
+  adminOnly,
+  ctrl.getDeliveryProviders,
+);
+
+module.exports = router;
