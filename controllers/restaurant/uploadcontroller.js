@@ -1,3 +1,4 @@
+const Restaurant = require("../../models/restaurant");
 const cloudinary = require("cloudinary").v2;
 
 exports.uploadImage = async (req, res) => {
@@ -22,7 +23,18 @@ exports.uploadImage = async (req, res) => {
         .end(req.file.buffer);
     });
 
-    res.json({ success: true, url: result.secure_url });
+    // ✅ Save image URL to restaurant document
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Restaurant not found" });
+    }
+
+    restaurant.image = result.secure_url;
+    await restaurant.save();
+
+    res.json({ success: true, data: restaurant });
   } catch (error) {
     console.error("Upload controller error:", error.message);
     res.status(500).json({ success: false, message: error.message });

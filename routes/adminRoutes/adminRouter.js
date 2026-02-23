@@ -2,6 +2,11 @@ const router = require("express").Router();
 const ctrl = require("../../controllers/admin/adminController");
 const { protect, adminOnly } = require("../../middleware/auth.middleware");
 
+const {
+  getSettings,
+  updateSettings,
+} = require("../../controllers/admin/settingsController");
+
 // ─── Public ───────────────────────────────────────────────
 router.post("/login", ctrl.adminLogin);
 
@@ -43,5 +48,9 @@ router.get(
   adminOnly,
   ctrl.getDeliveryProviders,
 );
+
+//updations of admin on pricing settings
+router.get("/settings", protect, adminOnly, getSettings);
+router.put("/settings", protect, adminOnly, updateSettings);
 
 module.exports = router;

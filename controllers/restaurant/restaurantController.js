@@ -1,7 +1,8 @@
-const User       = require("../../models/User");
-const bcrypt     = require("bcryptjs");
-const jwt        = require("jsonwebtoken");
+const User = require("../../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const Restaurant = require("../../models/restaurant");
+const Order = require("../../models/order");
 
 // ─── Register Restaurant ──────────────────────────────────
 exports.registerRestaurant = async (req, res) => {
@@ -17,7 +18,9 @@ exports.registerRestaurant = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: "Email already registered" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -34,7 +37,7 @@ exports.registerRestaurant = async (req, res) => {
       fullName,
       owner: newUser._id,
       subscription: {
-        plan:      null,
+        plan: null,
         startDate: null,
         expiresAt: null,
         autoRenew: true,
@@ -45,12 +48,17 @@ exports.registerRestaurant = async (req, res) => {
     const token = jwt.sign(
       { id: newUser._id, role: newUser.role },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.status(201).json({
       success: true,
-      user: { id: newUser._id, fullName: newUser.fullName, email: newUser.email, role: newUser.role },
+      user: {
+        id: newUser._id,
+        fullName: newUser.fullName,
+        email: newUser.email,
+        role: newUser.role,
+      },
       token,
     });
   } catch (error) {
@@ -64,34 +72,47 @@ exports.loginRestaurant = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: "Please provide email and password" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Please provide email and password" });
     }
 
     // ✅ find any role — admin and restaurant both use this login
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     // ✅ block customers from dashboard login
     if (user.role === "customer") {
-      return res.status(403).json({ success: false, message: "Use the customer login instead" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Use the customer login instead" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.status(200).json({
       success: true,
-      user: { id: user._id, fullName: user.fullName, email: user.email, role: user.role },
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
       token,
     });
   } catch (error) {

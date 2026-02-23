@@ -8,7 +8,7 @@ exports.getAllRestaurants = async (req, res) => {
     const query = { isApproved: true }; // ✅ only show admin-approved restaurants
 
     if (cuisine) {
-      query.cuisineTypes = { $in: [cuisine] };
+      query.cuisineTypes = { $in: [new RegExp(`^${cuisine}$`, "i")] };
     }
 
     if (search) {

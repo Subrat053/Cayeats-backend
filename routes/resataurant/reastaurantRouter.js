@@ -7,13 +7,6 @@ const {
 } = require("../../controllers/restaurant/restaurantController");
 
 const {
-  protect,
-  restaurantOnly,
-} = require("../../middleware/auth.middleware.js");
-
-const upload = require("../../middleware/upload.js");
-
-const {
   getDashboardStats,
   getRestaurantProfile,
   getRestaurantStats,
@@ -22,6 +15,7 @@ const {
   getSubscription,
   toggleAutoRenew,
   getBilling,
+  getDeliveryClicks,
 } = require("../../controllers/restaurant/dashboardController.js");
 
 const {
@@ -49,13 +43,39 @@ const {
 } = require("../../controllers/restaurant/uploadcontroller.js");
 
 const {
-  // ...existing imports
-  getDeliveryClicks, // ✅ add this
-} = require("../../controllers/restaurant/dashboardController.js");
+  createCheckoutSession,
+  handleWebhook,
+  getSubscriptionPricing,
+} = require("../../controllers/restaurant/stripeController.js");
 
-router.get("/delivery-clicks", protect, restaurantOnly, getDeliveryClicks);
+const {
+  protect,
+  restaurantOnly,
+} = require("../../middleware/auth.middleware.js");
+const upload = require("../../middleware/upload.js");
 
-// ─── Public Routes ────────────────────────────────────────
+// ─── Stripe Webhook (raw body — MUST be first) ────────────
+router.post(
+  "/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  handleWebhook,
+);
+
+// ─── Stripe routes BEFORE /subscription ───────────────────
+router.get(
+  "/subscription/pricing",
+  protect,
+  restaurantOnly,
+  getSubscriptionPricing,
+);
+router.post(
+  "/subscription/checkout",
+  protect,
+  restaurantOnly,
+  createCheckoutSession,
+);
+
+// ─── Public ───────────────────────────────────────────────
 router.post("/register", registerRestaurant);
 router.post("/login", loginRestaurant);
 
@@ -76,6 +96,9 @@ router.put(
 );
 router.get("/billing", protect, restaurantOnly, getBilling);
 
+// ─── Delivery Clicks ──────────────────────────────────────
+router.get("/delivery-clicks", protect, restaurantOnly, getDeliveryClicks);
+
 // ─── Image Upload ─────────────────────────────────────────
 router.post(
   "/upload",
@@ -85,10 +108,8 @@ router.post(
   uploadImage,
 );
 
-// ─── Ads Pricing ──────────────────────────────────────────
+// ─── Ads ──────────────────────────────────────────────────
 router.get("/ads/pricing", protect, restaurantOnly, getAdsPricing);
-
-// ─── Featured Listing ─────────────────────────────────────
 router.get("/ads/featured", protect, restaurantOnly, getFeaturedListingStatus);
 router.post("/ads/featured", protect, restaurantOnly, purchaseFeaturedListing);
 router.put(
@@ -97,16 +118,10 @@ router.put(
   restaurantOnly,
   cancelFeaturedListing,
 );
-
-// ─── Tonight's Cravings ───────────────────────────────────
 router.get("/ads/cravings", protect, restaurantOnly, getCravingsStatus);
 router.post("/ads/cravings", protect, restaurantOnly, purchaseTonightsCravings);
-
-// ─── Banner Ads ───────────────────────────────────────────
 router.get("/ads/banner", protect, restaurantOnly, getBannerAdStatus);
 router.post("/ads/banner", protect, restaurantOnly, purchaseBannerAd);
-
-// ─── Preferred Delivery ───────────────────────────────────
 router.get(
   "/ads/preferred-delivery",
   protect,

@@ -1,18 +1,10 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
 
 const {
   registerRestaurant,
   loginRestaurant,
 } = require("../../controllers/restaurant/restaurantController");
-
-const {
-  protect,
-  restaurantOnly,
-} = require("../../middleware/auth.middleware.js");
-
-const upload = require("../../middleware/upload.js");
-
 const {
   getDashboardStats,
   getRestaurantProfile,
@@ -24,7 +16,6 @@ const {
   getBilling,
   getDeliveryClicks,
 } = require("../../controllers/restaurant/dashboardController.js");
-
 const {
   getFeaturedListingStatus,
   purchaseFeaturedListing,
@@ -37,33 +28,55 @@ const {
   purchasePreferredDelivery,
   getAdsPricing,
 } = require("../../controllers/restaurant/adscontroller.js");
-
 const {
   getProducts,
   addProduct,
   updateProduct,
   deleteProduct,
 } = require("../../controllers/restaurant/productController.js");
-
 const {
   uploadImage,
 } = require("../../controllers/restaurant/uploadcontroller.js");
+const {
+  createCheckoutSession,
+  handleWebhook,
+  getSubscriptionPricing,
+} = require("../../controllers/restaurant/stripeController.js");
+const {
+  protect,
+  restaurantOnly,
+} = require("../../middleware/auth.middleware.js");
+const upload = require("../../middleware/upload.js");
+const {
+  getOrders,
+  updateOrderStatus,
+  createOrder,
+} = require("../../controllers/restaurant/orderController.js");
 
-// Delivery clicks
-router.get("/delivery-clicks", protect, restaurantOnly, getDeliveryClicks);
-
-// Public Routes
+router.post(
+  "/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  handleWebhook,
+);
+router.get(
+  "/subscription/pricing",
+  protect,
+  restaurantOnly,
+  getSubscriptionPricing,
+);
+router.post(
+  "/subscription/checkout",
+  protect,
+  restaurantOnly,
+  createCheckoutSession,
+);
 router.post("/register", registerRestaurant);
 router.post("/login", loginRestaurant);
-
-// Profile & Stats
 router.get("/profile", protect, restaurantOnly, getRestaurantProfile);
 router.put("/profile", protect, restaurantOnly, updateRestaurantProfile);
 router.get("/stats", protect, restaurantOnly, getRestaurantStats);
 router.get("/data", protect, restaurantOnly, getDashboardStats);
 router.put("/hours", protect, restaurantOnly, updateRestaurantHours);
-
-// Subscription & Billing
 router.get("/subscription", protect, restaurantOnly, getSubscription);
 router.put(
   "/subscription/auto-renew",
@@ -72,8 +85,7 @@ router.put(
   toggleAutoRenew,
 );
 router.get("/billing", protect, restaurantOnly, getBilling);
-
-// Image Upload
+router.get("/delivery-clicks", protect, restaurantOnly, getDeliveryClicks);
 router.post(
   "/upload",
   protect,
@@ -81,11 +93,7 @@ router.post(
   upload.single("image"),
   uploadImage,
 );
-
-// Ads Pricing
 router.get("/ads/pricing", protect, restaurantOnly, getAdsPricing);
-
-// Featured Listing
 router.get("/ads/featured", protect, restaurantOnly, getFeaturedListingStatus);
 router.post("/ads/featured", protect, restaurantOnly, purchaseFeaturedListing);
 router.put(
@@ -94,16 +102,10 @@ router.put(
   restaurantOnly,
   cancelFeaturedListing,
 );
-
-// Tonight's Cravings
 router.get("/ads/cravings", protect, restaurantOnly, getCravingsStatus);
 router.post("/ads/cravings", protect, restaurantOnly, purchaseTonightsCravings);
-
-// Banner Ads
 router.get("/ads/banner", protect, restaurantOnly, getBannerAdStatus);
 router.post("/ads/banner", protect, restaurantOnly, purchaseBannerAd);
-
-// Preferred Delivery
 router.get(
   "/ads/preferred-delivery",
   protect,
@@ -116,11 +118,14 @@ router.post(
   restaurantOnly,
   purchasePreferredDelivery,
 );
-
-// Products
 router.get("/products", protect, restaurantOnly, getProducts);
 router.post("/products", protect, restaurantOnly, addProduct);
 router.put("/products/:id", protect, restaurantOnly, updateProduct);
 router.delete("/products/:id", protect, restaurantOnly, deleteProduct);
+
+// ─── Orders ───────────────────────────────────────────────
+router.get("/orders", protect, restaurantOnly, getOrders);
+router.put("/orders/:id/status", protect, restaurantOnly, updateOrderStatus);
+router.post("/orders", protect, restaurantOnly, createOrder);
 
 module.exports = router;

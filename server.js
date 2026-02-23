@@ -21,6 +21,12 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
 );
+
+app.use(
+  "/api/restaurant/stripe/webhook",
+  express.raw({ type: "application/json" }),
+);
+
 app.use(express.json());
 connectDB();
 
