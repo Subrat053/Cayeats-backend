@@ -15,10 +15,21 @@ const browseRouter = require("./routes/public/index");
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  ...(process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
+    : []),
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: "*",
-    credentials: true,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
 );
