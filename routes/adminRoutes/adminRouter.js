@@ -5,10 +5,15 @@ const { protect, adminOnly } = require("../../middleware/auth.middleware");
 const {
   getSettings,
   updateSettings,
+  uploadBrandingImage,
+  brandingUploadMiddleware,
+  getFooterSettings,
+  updateFooterSettings,
 } = require("../../controllers/admin/settingsController");
 
 // ─── Public ───────────────────────────────────────────────
 router.post("/login", ctrl.adminLogin);
+router.get("/footer", getFooterSettings);
 
 // ─── Protected (admin only) ───────────────────────────────
 router.get("/dashboard", protect, adminOnly, ctrl.getDashboardStats);
@@ -52,5 +57,15 @@ router.get(
 //updations of admin on pricing settings
 router.get("/settings", protect, adminOnly, getSettings);
 router.put("/settings", protect, adminOnly, updateSettings);
+router.post(
+  "/settings/upload-branding",
+  protect,
+  adminOnly,
+  brandingUploadMiddleware,
+  uploadBrandingImage,
+);
+
+//updations of admin on footer settings
+router.put("/footer", protect, adminOnly, updateFooterSettings);
 
 module.exports = router;

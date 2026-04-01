@@ -175,11 +175,11 @@ exports.getSubscriptionPricing = async (req, res) => {
       {
         id: "Platinum",
         name: "Platinum",
-        duration: "2 Years",
-        price: base.annual * 2,
+        duration: "3 Years",
+        price: base.annual * 3,
         finalPrice: isFirstYear
-          ? Math.round(base.annual * 2 * (1 - discount / 100))
-          : base.annual * 2,
+          ? Math.round(base.annual * 3 * (1 - discount / 100))
+          : base.annual * 3,
         isFirstYear,
         discount,
         features: [

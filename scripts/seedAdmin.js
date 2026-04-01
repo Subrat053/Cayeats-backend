@@ -23,7 +23,7 @@ const seedAdmin = async () => {
     });
 
     console.log("✅ Admin created successfully");
-    console.log("   Email:    admin@cayeats.com");
+    console.log("   Email:admin@cayeats.com");
     console.log("   Password: Admin@123");
     console.log("   ⚠️  Change password after first login!");
     process.exit(0);
