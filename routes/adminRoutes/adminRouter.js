@@ -11,6 +11,27 @@ const {
   updateFooterSettings,
 } = require("../../controllers/admin/settingsController");
 
+const {
+  getAllReports,
+  getReportById,
+  updateReportStatus,
+  replyToReport,
+  deleteReport,
+  getReportsByStatus,
+} = require("../../controllers/admin/reportController");
+
+const {
+  getAllFooterPages,
+  getFooterPageBySlug,
+  createOrUpdateFooterPage,
+  addFAQ,
+  updateFAQ,
+  deleteFAQ,
+  updateContactInfo,
+  togglePageStatus,
+  initializeDefaultPages,
+} = require("../../controllers/admin/footerPageController");
+
 // ─── Public ───────────────────────────────────────────────
 router.post("/login", ctrl.adminLogin);
 router.get("/footer", getFooterSettings);
@@ -46,6 +67,14 @@ router.put("/banners/:id/reject", protect, adminOnly, ctrl.rejectBanner);
 router.get("/users", protect, adminOnly, ctrl.getAllUsers);
 router.get("/analytics", protect, adminOnly, ctrl.getAnalytics);
 
+// ─── Reports Management ───────────────────────────────────
+router.get("/reports", protect, adminOnly, getAllReports);
+router.get("/reports/status/:status", protect, adminOnly, getReportsByStatus);
+router.get("/reports/:id", protect, adminOnly, getReportById);
+router.put("/reports/:id/status", protect, adminOnly, updateReportStatus);
+router.put("/reports/:id/reply", protect, adminOnly, replyToReport);
+router.delete("/reports/:id", protect, adminOnly, deleteReport);
+
 //---------------delivery providers---------------
 router.get(
   "/delivery-providers",
@@ -67,5 +96,29 @@ router.post(
 
 //updations of admin on footer settings
 router.put("/footer", protect, adminOnly, updateFooterSettings);
+
+// ─── Footer Pages Management ──────────────────────────────
+router.post(
+  "/footer-pages/initialize",
+  protect,
+  adminOnly,
+  initializeDefaultPages,
+);
+router.get("/footer-pages", protect, adminOnly, getAllFooterPages);
+router.get("/footer-pages/:slug", protect, adminOnly, getFooterPageBySlug);
+router.put("/footer-pages/:slug", protect, adminOnly, createOrUpdateFooterPage);
+router.post("/footer-pages/:slug/faq", protect, adminOnly, addFAQ);
+router.put("/footer-pages/:slug/faq/:faqId", protect, adminOnly, updateFAQ);
+router.delete("/footer-pages/:slug/faq/:faqId", protect, adminOnly, deleteFAQ);
+router.put(
+  "/footer-pages/:slug/contact",
+  protect,
+  adminOnly,
+  updateContactInfo,
+);
+router.put("/footer-pages/:slug/toggle", protect, adminOnly, togglePageStatus);
+
+// ─── Public Footer Pages (without auth) ────────────────────
+router.get("/public/footer-pages/:slug", getFooterPageBySlug);
 
 module.exports = router;

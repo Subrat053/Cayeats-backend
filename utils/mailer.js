@@ -68,3 +68,86 @@ exports.sendContactFormEmail = async ({
     html,
   });
 };
+
+exports.sendGeneralContactEmail = async ({ name, email, subject, message }) => {
+  const to = process.env.CONTACT_FORM_TO || process.env.ADMIN_EMAIL;
+
+  if (!to) {
+    throw new Error("Missing CONTACT_FORM_TO or ADMIN_EMAIL in environment");
+  }
+
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error("Missing SMTP_USER or SMTP_PASS in environment");
+  }
+
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  const text = [
+    "New contact form submission from CayEats",
+    `Your Name: ${name}`,
+    `Email: ${email}`,
+    `Subject: ${subject}`,
+    `Message: ${message || "N/A"}`,
+  ].join("\n");
+
+  const html = `
+    <h2>New Contact Form Submission</h2>
+    <p><strong>Your Name:</strong> ${escapeHtml(name)}</p>
+    <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+    <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
+    <p><strong>Message:</strong> ${escapeHtml(message || "N/A")}</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to,
+    replyTo: email,
+    subject: `CayEats General Contact: ${subject}`,
+    text,
+    html,
+  });
+};
+
+exports.sendReportIssueEmail = async ({
+  name,
+  email,
+  issueType,
+  description,
+}) => {
+  const to = process.env.CONTACT_FORM_TO || process.env.ADMIN_EMAIL;
+
+  if (!to) {
+    throw new Error("Missing CONTACT_FORM_TO or ADMIN_EMAIL in environment");
+  }
+
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error("Missing SMTP_USER or SMTP_PASS in environment");
+  }
+
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  const text = [
+    "New issue report from CayEats",
+    `Your Name: ${name}`,
+    `Email: ${email}`,
+    `Issue Type: ${issueType}`,
+    `Description: ${description || "N/A"}`,
+  ].join("\n");
+
+  const html = `
+    <h2>New Issue Report</h2>
+    <p><strong>Your Name:</strong> ${escapeHtml(name)}</p>
+    <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+    <p><strong>Issue Type:</strong> ${escapeHtml(issueType)}</p>
+    <p><strong>Description:</strong> ${escapeHtml(description || "N/A")}</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to,
+    replyTo: email,
+    subject: `CayEats Issue Report: ${issueType}`,
+    text,
+    html,
+  });
+};
