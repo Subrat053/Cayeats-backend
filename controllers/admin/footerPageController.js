@@ -278,7 +278,7 @@ exports.initializeDefaultPages = async (req, res) => {
         title: "Contact Us",
         description: "Get in touch with our team",
         contactInfo: {
-          email: "support@cayeats.com",
+          email: "info@cayeats.com",
           phone: "+1-345-555-0123",
           address: "123 Main Street, George Town, Cayman Islands",
           hours: "Mon-Fri: 9AM-6PM, Sat: 10AM-4PM, Sun: Closed",
