@@ -1,9 +1,19 @@
 // auth.middleware.js
+//cayeats
 
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 exports.protect = async (req, res, next) => {
+  if (req.isMasterAdmin) return next();
+  if (
+    req.headers["x-master-admin-secret"] === process.env.MASTER_ADMIN_SECRET
+  ) {
+    req.isMasterAdmin = true;
+    req.user = { id: "master-admin", role: "admin", isActive: true };
+    return next();
+  }
+
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: "Token missing" });
@@ -31,6 +41,14 @@ exports.protect = async (req, res, next) => {
 
 // ✅ NEW - use this on restaurant-only routes
 exports.restaurantOnly = (req, res, next) => {
+  if (req.isMasterAdmin) return next();
+  if (
+    req.headers["x-master-admin-secret"] === process.env.MASTER_ADMIN_SECRET
+  ) {
+    req.isMasterAdmin = true;
+    req.user = { id: "master-admin", role: "admin", isActive: true };
+    return next();
+  }
   if (req.user?.role !== "restaurant") {
     return res
       .status(403)
@@ -41,6 +59,14 @@ exports.restaurantOnly = (req, res, next) => {
 
 // ✅ NEW - use this on admin-only routes
 exports.adminOnly = (req, res, next) => {
+  if (req.isMasterAdmin) return next();
+  if (
+    req.headers["x-master-admin-secret"] === process.env.MASTER_ADMIN_SECRET
+  ) {
+    req.isMasterAdmin = true;
+    req.user = { id: "master-admin", role: "admin", isActive: true };
+    return next();
+  }
   if (req.user?.role !== "admin") {
     return res
       .status(403)
