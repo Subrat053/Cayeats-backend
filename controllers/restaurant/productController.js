@@ -6,7 +6,7 @@ exports.getProducts = async (req, res) => {
   try {
     console.log("🔍 User ID:", req.user._id);
 
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     console.log("🔍 Restaurant:", restaurant?._id || "NOT FOUND");
 
     if (!restaurant) {
@@ -26,7 +26,7 @@ exports.getProducts = async (req, res) => {
 // POST add a new product
 exports.addProduct = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant)
       return res.status(404).json({ message: "Restaurant not found" });
 
@@ -49,7 +49,7 @@ exports.addProduct = async (req, res) => {
 // PUT update a product
 exports.updateProduct = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     const product = await Product.findOneAndUpdate(
       { _id: req.params.id, restaurant: restaurant._id },
       req.body,
@@ -65,7 +65,7 @@ exports.updateProduct = async (req, res) => {
 // DELETE a product
 exports.deleteProduct = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     const product = await Product.findOneAndDelete({
       _id: req.params.id,
       restaurant: restaurant._id,

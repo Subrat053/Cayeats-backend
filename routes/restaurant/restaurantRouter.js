@@ -45,6 +45,7 @@ const {
 const {
   protect,
   restaurantOnly,
+  approvalRequired,
 } = require("../../middleware/auth.middleware.js");
 const upload = require("../../middleware/upload.js");
 const {
@@ -68,20 +69,34 @@ router.post(
   "/subscription/checkout",
   protect,
   restaurantOnly,
+  approvalRequired,
   createCheckoutSession,
 );
 router.post("/register", registerRestaurant);
 router.post("/login", loginRestaurant);
 router.get("/profile", protect, restaurantOnly, getRestaurantProfile);
-router.put("/profile", protect, restaurantOnly, updateRestaurantProfile);
+router.put(
+  "/profile",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  updateRestaurantProfile,
+);
 router.get("/stats", protect, restaurantOnly, getRestaurantStats);
 router.get("/data", protect, restaurantOnly, getDashboardStats);
-router.put("/hours", protect, restaurantOnly, updateRestaurantHours);
+router.put(
+  "/hours",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  updateRestaurantHours,
+);
 router.get("/subscription", protect, restaurantOnly, getSubscription);
 router.put(
   "/subscription/auto-renew",
   protect,
   restaurantOnly,
+  approvalRequired,
   toggleAutoRenew,
 );
 router.get("/billing", protect, restaurantOnly, getBilling);
@@ -90,22 +105,42 @@ router.post(
   "/upload",
   protect,
   restaurantOnly,
+  approvalRequired,
   upload.single("image"),
   uploadImage,
 );
 router.get("/ads/pricing", protect, restaurantOnly, getAdsPricing);
 router.get("/ads/featured", protect, restaurantOnly, getFeaturedListingStatus);
-router.post("/ads/featured", protect, restaurantOnly, purchaseFeaturedListing);
+router.post(
+  "/ads/featured",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  purchaseFeaturedListing,
+);
 router.put(
   "/ads/featured/:id/cancel",
   protect,
   restaurantOnly,
+  approvalRequired,
   cancelFeaturedListing,
 );
 router.get("/ads/cravings", protect, restaurantOnly, getCravingsStatus);
-router.post("/ads/cravings", protect, restaurantOnly, purchaseTonightsCravings);
+router.post(
+  "/ads/cravings",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  purchaseTonightsCravings,
+);
 router.get("/ads/banner", protect, restaurantOnly, getBannerAdStatus);
-router.post("/ads/banner", protect, restaurantOnly, purchaseBannerAd);
+router.post(
+  "/ads/banner",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  purchaseBannerAd,
+);
 router.get(
   "/ads/preferred-delivery",
   protect,
@@ -116,16 +151,35 @@ router.post(
   "/ads/preferred-delivery",
   protect,
   restaurantOnly,
+  approvalRequired,
   purchasePreferredDelivery,
 );
 router.get("/products", protect, restaurantOnly, getProducts);
-router.post("/products", protect, restaurantOnly, addProduct);
-router.put("/products/:id", protect, restaurantOnly, updateProduct);
-router.delete("/products/:id", protect, restaurantOnly, deleteProduct);
+router.post("/products", protect, restaurantOnly, approvalRequired, addProduct);
+router.put(
+  "/products/:id",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  updateProduct,
+);
+router.delete(
+  "/products/:id",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  deleteProduct,
+);
 
 // ─── Orders ───────────────────────────────────────────────
 router.get("/orders", protect, restaurantOnly, getOrders);
-router.put("/orders/:id/status", protect, restaurantOnly, updateOrderStatus);
-router.post("/orders", protect, restaurantOnly, createOrder);
+router.put(
+  "/orders/:id/status",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  updateOrderStatus,
+);
+router.post("/orders", protect, restaurantOnly, approvalRequired, createOrder);
 
 module.exports = router;

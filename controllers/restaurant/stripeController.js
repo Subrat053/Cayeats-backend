@@ -23,7 +23,7 @@ exports.createCheckoutSession = async (req, res) => {
     const settings = await Settings.findOne();
     console.log("Settings loaded:", !!settings);
 
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     console.log("Restaurant loaded:", !!restaurant);
 
     const basePrice = settings?.claimPricing || {
@@ -134,12 +134,56 @@ exports.handleWebhook = async (req, res) => {
 // ─── Get Subscription Status ──────────────────────────────
 exports.getSubscriptionPricing = async (req, res) => {
   try {
-    const settings = await Settings.findOne();
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    const isFirstYear = !restaurant?.subscription?.plan;
-    const discount = settings?.firstYearDiscount || 0;
+    let settings = await Settings.findOne();
 
+    // Ensure settings exist with defaults
+    if (!settings) {
+      settings = await Settings.create({});
+    }
+
+    // Migrate from old firstYearDiscount to new yearlyDiscounts if needed
+    if (!settings.yearlyDiscounts && settings.firstYearDiscount) {
+      settings.yearlyDiscounts = {
+        year1: settings.firstYearDiscount,
+        year2: 25,
+        year3: 25,
+      };
+      await settings.save();
+    }
+
+    const restaurant = await Restaurant.findById(req.user._id);
+    const isFirstYear = !restaurant?.subscription?.plan;
+
+    // Get yearly discounts with proper defaults
+    const yearlyDiscounts = settings?.yearlyDiscounts || {
+      year1: 50,
+      year2: 25,
+      year3: 25,
+    };
+
+    // Get claim pricing with defaults
     const base = settings?.claimPricing || { semiAnnual: 160, annual: 240 };
+
+    // Determine which year the restaurant is in for proper discount
+    let currentYear = "year1";
+    let currentDiscount = yearlyDiscounts.year1;
+    if (restaurant?.subscription?.plan) {
+      const createdDate = new Date(restaurant.createdAt);
+      const now = new Date();
+      const yearsElapsed = Math.floor(
+        (now - createdDate) / (365.25 * 24 * 60 * 60 * 1000),
+      );
+      if (yearsElapsed === 0) {
+        currentYear = "year1";
+        currentDiscount = yearlyDiscounts.year1;
+      } else if (yearsElapsed === 1) {
+        currentYear = "year2";
+        currentDiscount = yearlyDiscounts.year2;
+      } else {
+        currentYear = "year3";
+        currentDiscount = yearlyDiscounts.year3;
+      }
+    }
 
     const plans = [
       {
@@ -148,10 +192,11 @@ exports.getSubscriptionPricing = async (req, res) => {
         duration: "6 Months",
         price: base.semiAnnual,
         finalPrice: isFirstYear
-          ? Math.round(base.semiAnnual * (1 - discount / 100))
-          : base.semiAnnual,
+          ? Math.round(base.semiAnnual * (1 - yearlyDiscounts.year1 / 100))
+          : Math.round(base.semiAnnual * (1 - currentDiscount / 100)),
         isFirstYear,
-        discount,
+        discount: isFirstYear ? yearlyDiscounts.year1 : currentDiscount,
+        year: currentYear,
         features: ["Restaurant listing", "Basic analytics", "Customer reviews"],
       },
       {
@@ -160,10 +205,11 @@ exports.getSubscriptionPricing = async (req, res) => {
         duration: "1 Year",
         price: base.annual,
         finalPrice: isFirstYear
-          ? Math.round(base.annual * (1 - discount / 100))
-          : base.annual,
+          ? Math.round(base.annual * (1 - yearlyDiscounts.year1 / 100))
+          : Math.round(base.annual * (1 - currentDiscount / 100)),
         isFirstYear,
-        discount,
+        discount: isFirstYear ? yearlyDiscounts.year1 : currentDiscount,
+        year: currentYear,
         features: [
           "Everything in Silver",
           "Featured placement",
@@ -178,10 +224,11 @@ exports.getSubscriptionPricing = async (req, res) => {
         duration: "3 Years",
         price: base.annual * 3,
         finalPrice: isFirstYear
-          ? Math.round(base.annual * 3 * (1 - discount / 100))
-          : base.annual * 3,
+          ? Math.round(base.annual * 3 * (1 - yearlyDiscounts.year1 / 100))
+          : Math.round(base.annual * 3 * (1 - currentDiscount / 100)),
         isFirstYear,
-        discount,
+        discount: isFirstYear ? yearlyDiscounts.year1 : currentDiscount,
+        year: currentYear,
         features: [
           "Everything in Gold",
           "Top of search results",
@@ -191,7 +238,19 @@ exports.getSubscriptionPricing = async (req, res) => {
       },
     ];
 
-    res.json({ success: true, data: { plans, isFirstYear, discount } });
+    // Prevent caching so pricing updates are reflected immediately
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    res.json({
+      success: true,
+      data: {
+        plans,
+        isFirstYear,
+        discount: isFirstYear ? yearlyDiscounts.year1 : currentDiscount,
+        yearlyDiscounts,
+        currentYear,
+        basePricing: base,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

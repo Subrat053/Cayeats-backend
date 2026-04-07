@@ -3,7 +3,9 @@ const Transaction = require("../../models/transaction.js");
 
 exports.getDashboardStats = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id).select(
+      "-password",
+    );
     if (!restaurant)
       return res
         .status(404)
@@ -16,8 +18,8 @@ exports.getDashboardStats = async (req, res) => {
 
 exports.getRestaurantProfile = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id }).select(
-      "-owner",
+    const restaurant = await Restaurant.findById(req.user._id).select(
+      "-password",
     );
     if (!restaurant)
       return res
@@ -48,11 +50,11 @@ exports.updateRestaurantProfile = async (req, res) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
 
-    const restaurant = await Restaurant.findOneAndUpdate(
-      { owner: req.user._id },
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      req.user._id,
       { $set: updates },
       { new: true, runValidators: true },
-    ).select("-owner");
+    ).select("-password");
 
     if (!restaurant)
       return res
@@ -66,7 +68,7 @@ exports.updateRestaurantProfile = async (req, res) => {
 
 exports.getRestaurantStats = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant)
       return res
         .status(404)
@@ -102,8 +104,8 @@ exports.updateRestaurantHours = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Hours are required" });
 
-    const restaurant = await Restaurant.findOneAndUpdate(
-      { owner: req.user._id },
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      req.user._id,
       { $set: { openingHours: hours, lastHoursUpdate: new Date() } },
       { new: true },
     );
@@ -120,7 +122,7 @@ exports.updateRestaurantHours = async (req, res) => {
 
 exports.getSubscription = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant)
       return res
         .status(404)
@@ -163,7 +165,7 @@ exports.getSubscription = async (req, res) => {
 exports.toggleAutoRenew = async (req, res) => {
   try {
     const { autoRenew } = req.body;
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant)
       return res
         .status(404)
@@ -183,7 +185,7 @@ exports.toggleAutoRenew = async (req, res) => {
 
 exports.getBilling = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant)
       return res
         .status(404)
@@ -232,7 +234,7 @@ exports.purchaseSubscription = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant) {
       return res
         .status(404)
@@ -270,7 +272,7 @@ exports.purchaseSubscription = async (req, res) => {
 
 exports.getDeliveryClicks = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant) {
       return res
         .status(404)

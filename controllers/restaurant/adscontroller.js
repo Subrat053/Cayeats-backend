@@ -5,8 +5,8 @@ const BannerAd = require("../../models/bannerad.js");
 const PreferredDelivery = require("../../models/preferreddelivery.js");
 
 // ─── Helper: get restaurant for logged in owner ───────────
-const getOwnerRestaurant = async (userId) => {
-  const restaurant = await Restaurant.findOne({ owner: userId });
+const getOwnerRestaurant = async (restaurantId) => {
+  const restaurant = await Restaurant.findById(restaurantId);
   if (!restaurant) throw new Error("Restaurant not found");
   return restaurant;
 };

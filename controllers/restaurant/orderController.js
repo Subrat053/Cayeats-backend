@@ -4,7 +4,7 @@ const Order = require("../../models/order");
 // GET all orders for this restaurant
 exports.getOrders = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant)
       return res.status(404).json({ message: "Restaurant not found" });
 
@@ -76,7 +76,7 @@ exports.getOrders = async (req, res) => {
 // PUT update order status
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, restaurant: restaurant._id },
       { status: req.body.status },

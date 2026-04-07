@@ -3,9 +3,10 @@ const mongoose = require("mongoose");
 const RestaurantSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
     address: { type: String },
     phone: { type: String }, // ✅ added
-    email: { type: String }, // ✅ added
     website: { type: String }, // ✅ added
     instagram: { type: String }, // ✅ added
     cuisineTypes: [{ type: String }],
@@ -41,7 +42,7 @@ const RestaurantSchema = new mongoose.Schema(
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
     },
     viewCount: {
       //for analytics tracking
@@ -56,6 +57,10 @@ const RestaurantSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    }, // ✅ set to false when restaurant is deleted by admin
   },
 
   { timestamps: true },

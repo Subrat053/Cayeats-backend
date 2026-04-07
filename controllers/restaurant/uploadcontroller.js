@@ -24,7 +24,7 @@ exports.uploadImage = async (req, res) => {
     });
 
     // ✅ Save image URL to restaurant document
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const restaurant = await Restaurant.findById(req.user._id);
     if (!restaurant) {
       return res
         .status(404)
@@ -32,9 +32,14 @@ exports.uploadImage = async (req, res) => {
     }
 
     restaurant.image = result.secure_url;
+    restaurant.profileImage = result.secure_url;
     await restaurant.save();
 
-    res.json({ success: true, data: restaurant });
+    res.json({
+      success: true,
+      url: result.secure_url,
+      data: restaurant,
+    });
   } catch (error) {
     console.error("Upload controller error:", error.message);
     res.status(500).json({ success: false, message: error.message });

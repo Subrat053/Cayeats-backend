@@ -3,6 +3,8 @@
 
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Admin = require("../models/Admin");
+const Restaurant = require("../models/restaurant");
 
 exports.protect = async (req, res, next) => {
   if (req.isMasterAdmin) return next();
@@ -20,8 +22,24 @@ exports.protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (decoded.role === "admin" && decoded.id === "admin") {
-      req.user = decoded;
+    if (decoded.role === "admin") {
+      const admin = await Admin.findById(decoded.id).select("-password");
+      if (!admin) return res.status(401).json({ message: "Admin not found" });
+      if (!admin.isActive)
+        return res.status(401).json({ message: "Admin is inactive" });
+      req.user = { ...admin.toObject(), role: "admin" };
+      return next();
+    }
+
+    if (decoded.role === "restaurant") {
+      const restaurant = await Restaurant.findById(decoded.id).select(
+        "-password",
+      );
+      if (!restaurant)
+        return res.status(401).json({ message: "Restaurant not found" });
+      if (!restaurant.isActive)
+        return res.status(401).json({ message: "Restaurant is inactive" });
+      req.user = { ...restaurant.toObject(), role: "restaurant" };
       return next();
     }
 
@@ -72,5 +90,38 @@ exports.adminOnly = (req, res, next) => {
       .status(403)
       .json({ success: false, message: "Admin access required" });
   }
+  next();
+};
+
+// ✅ NEW - use this on restaurant write routes that require approval
+exports.approvalRequired = async (req, res, next) => {
+  if (req.isMasterAdmin) return next();
+  if (
+    req.headers["x-master-admin-secret"] === process.env.MASTER_ADMIN_SECRET
+  ) {
+    req.isMasterAdmin = true;
+    req.user = { id: "master-admin", role: "admin", isActive: true };
+    return next();
+  }
+
+  if (req.user?.role !== "restaurant") {
+    return res
+      .status(403)
+      .json({ message: "Access denied. Restaurants only." });
+  }
+
+  const restaurant = req.user;
+  if (!restaurant || !restaurant._id) {
+    return res.status(404).json({ message: "Restaurant not found" });
+  }
+
+  if (!restaurant.isActive) {
+    return res.status(403).json({ message: "Restaurant is inactive" });
+  }
+
+  if (!restaurant.isApproved) {
+    return res.status(403).json({ message: "Waiting for admin approval" });
+  }
+
   next();
 };

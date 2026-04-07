@@ -39,7 +39,13 @@ const settingsSchema = new mongoose.Schema(
       semiAnnual: { type: Number, default: 160 },
       annual: { type: Number, default: 240 },
     },
-    firstYearDiscount: { type: Number, default: 50 }, // % off first year
+    yearlyDiscounts: {
+      year1: { type: Number, default: 50 }, // % off year 1
+      year2: { type: Number, default: 25 }, // % off year 2
+      year3: { type: Number, default: 25 }, // % off year 3
+    },
+    // Legacy field - keeping for backward compatibility
+    firstYearDiscount: { type: Number, default: 50 },
     productPlans: {
       basic: {
         semiAnnual: { type: Number, default: 99 },

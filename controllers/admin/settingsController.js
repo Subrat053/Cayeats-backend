@@ -26,6 +26,8 @@ exports.getSettings = async (req, res) => {
   try {
     let settings = await Settings.findOne();
     if (!settings) settings = await Settings.create({});
+    // Prevent caching so admin changes are reflected immediately
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
     res.json({ success: true, data: settings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -45,6 +47,7 @@ exports.updateSettings = async (req, res) => {
       "notifications",
       "claimPricing",
       "firstYearDiscount",
+      "yearlyDiscounts",
       "productPlans",
       "adPricing",
       "promoPricing",

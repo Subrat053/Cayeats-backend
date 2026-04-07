@@ -1,4 +1,5 @@
 const User = require("../../models/User");
+const Admin = require("../../models/Admin");
 const Restaurant = require("../../models/restaurant");
 const Transaction = require("../../models/transaction");
 const TonightsCraving = require("../../models/tonightcravings");
@@ -10,30 +11,35 @@ const jwt = require("jsonwebtoken");
 exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email, role: "admin" });
-    if (!user) {
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
+    if (!admin.isActive) {
+      return res
+        .status(403)
+        .json({ success: false, message: "This account has been deactivated" });
+    }
+    const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
     }
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: admin._id, role: "admin" },
       process.env.JWT_SECRET,
       { expiresIn: "7d" },
     );
     res.json({
       success: true,
       user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
+        id: admin._id,
+        fullName: admin.fullName,
+        email: admin.email,
+        role: "admin",
       },
       token,
     });
@@ -120,7 +126,6 @@ exports.getAllRestaurants = async (req, res) => {
     if (verified !== undefined) query.isVerified = verified === "true";
 
     const restaurants = await Restaurant.find(query)
-      .populate("owner", "fullName email")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
@@ -195,8 +200,19 @@ exports.updateRestaurantSubscription = async (req, res) => {
 
 exports.deleteRestaurant = async (req, res) => {
   try {
-    await Restaurant.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: "Restaurant deleted" });
+    const restaurant = await Restaurant.findByIdAndDelete(req.params.id);
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Restaurant not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Restaurant deleted successfully",
+      data: restaurant,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -290,10 +306,104 @@ exports.rejectBanner = async (req, res) => {
 // ─── Users ────────────────────────────────────────────────
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: { $ne: "admin" } })
+    const users = await User.find({ role: "customer" })
       .select("-password")
       .sort({ createdAt: -1 });
+
     res.json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── Delete User ──────────────────────────────────────────
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Delete associated restaurant if exists
+    if (user.role === "restaurant") {
+      await Restaurant.deleteOne({ owner: user._id });
+    }
+
+    // Delete the user
+    await User.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── Deactivate User ──────────────────────────────────────
+exports.deactivateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true },
+    ).select("-password");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Also deactivate associated restaurant if exists
+    if (user.role === "restaurant") {
+      await Restaurant.updateOne({ owner: user._id }, { isActive: false });
+    }
+
+    res.json({
+      success: true,
+      message: "User deactivated successfully",
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── Activate User ────────────────────────────────────────
+exports.activateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isActive: true },
+      { new: true },
+    ).select("-password");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Also activate associated restaurant if exists
+    if (user.role === "restaurant") {
+      await Restaurant.updateOne({ owner: user._id }, { isActive: true });
+    }
+
+    res.json({
+      success: true,
+      message: "User activated successfully",
+      data: user,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

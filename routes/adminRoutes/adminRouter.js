@@ -65,6 +65,9 @@ router.get("/banners/pending", protect, adminOnly, ctrl.getPendingBanners);
 router.put("/banners/:id/approve", protect, adminOnly, ctrl.approveBanner);
 router.put("/banners/:id/reject", protect, adminOnly, ctrl.rejectBanner);
 router.get("/users", protect, adminOnly, ctrl.getAllUsers);
+router.delete("/users/:id", protect, adminOnly, ctrl.deleteUser);
+router.put("/users/:id/deactivate", protect, adminOnly, ctrl.deactivateUser);
+router.put("/users/:id/activate", protect, adminOnly, ctrl.activateUser);
 router.get("/analytics", protect, adminOnly, ctrl.getAnalytics);
 
 // ─── Reports Management ───────────────────────────────────
