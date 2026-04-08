@@ -1,7 +1,8 @@
 const Product = require("../../models/product");
 const Restaurant = require("../../models/restaurant");
+const Category = require("../../models/category");
 
-// GET all products for the logged-in restaurant
+// GET all products for the logged-in restaurant (with category details)
 exports.getProducts = async (req, res) => {
   try {
     console.log("🔍 User ID:", req.user._id);
@@ -13,7 +14,9 @@ exports.getProducts = async (req, res) => {
       return res.status(404).json({ message: "Restaurant not found" });
     }
 
-    const products = await Product.find({ restaurant: restaurant._id });
+    const products = await Product.find({
+      restaurant: restaurant._id,
+    }).populate("category", "name icon description");
     console.log("🔍 Found products:", products.length);
 
     res.json({ success: true, data: products });
@@ -31,15 +34,27 @@ exports.addProduct = async (req, res) => {
       return res.status(404).json({ message: "Restaurant not found" });
 
     const { name, description, price, category, image, stock } = req.body;
+
+    // Validate category exists and belongs to this restaurant
+    const categoryDoc = await Category.findOne({
+      _id: category,
+      restaurant: restaurant._id,
+    });
+
+    if (!categoryDoc && category) {
+      return res.status(400).json({ message: "Invalid category selected" });
+    }
+
     const product = await Product.create({
       name,
       description,
       price,
-      category,
+      category: categoryDoc?._id,
       image,
       stock,
       restaurant: restaurant._id,
-    });
+    }).then((p) => p.populate("category", "name icon description"));
+
     res.status(201).json({ success: true, data: product });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -50,11 +65,26 @@ exports.addProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const restaurant = await Restaurant.findById(req.user._id);
+    const { category } = req.body;
+
+    // Validate category if provided
+    if (category) {
+      const categoryDoc = await Category.findOne({
+        _id: category,
+        restaurant: restaurant._id,
+      });
+
+      if (!categoryDoc) {
+        return res.status(400).json({ message: "Invalid category selected" });
+      }
+    }
+
     const product = await Product.findOneAndUpdate(
       { _id: req.params.id, restaurant: restaurant._id },
       req.body,
       { new: true },
-    );
+    ).populate("category", "name icon description");
+
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json({ success: true, data: product });
   } catch (err) {

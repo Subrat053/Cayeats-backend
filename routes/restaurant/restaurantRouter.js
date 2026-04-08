@@ -35,6 +35,14 @@ const {
   deleteProduct,
 } = require("../../controllers/restaurant/productController.js");
 const {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  reorderCategories,
+  getCategoryAnalytics,
+} = require("../../controllers/restaurant/categoryController.js");
+const {
   uploadImage,
 } = require("../../controllers/restaurant/uploadcontroller.js");
 const {
@@ -154,6 +162,45 @@ router.post(
   approvalRequired,
   purchasePreferredDelivery,
 );
+
+// ─── Categories ───────────────────────────────────────────
+router.get("/categories", protect, restaurantOnly, getCategories);
+router.post(
+  "/categories",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  createCategory,
+);
+router.put(
+  "/categories/:id",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  updateCategory,
+);
+router.delete(
+  "/categories/:id",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  deleteCategory,
+);
+router.put(
+  "/categories/reorder/all",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  reorderCategories,
+);
+router.get(
+  "/categories/analytics/all",
+  protect,
+  restaurantOnly,
+  getCategoryAnalytics,
+);
+
+// ─── Products ───────────────────────────────────────────────
 router.get("/products", protect, restaurantOnly, getProducts);
 router.post("/products", protect, restaurantOnly, approvalRequired, addProduct);
 router.put(

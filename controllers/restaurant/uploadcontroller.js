@@ -1,4 +1,3 @@
-const Restaurant = require("../../models/restaurant");
 const cloudinary = require("cloudinary").v2;
 
 exports.uploadImage = async (req, res) => {
@@ -23,22 +22,12 @@ exports.uploadImage = async (req, res) => {
         .end(req.file.buffer);
     });
 
-    // ✅ Save image URL to restaurant document
-    const restaurant = await Restaurant.findById(req.user._id);
-    if (!restaurant) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Restaurant not found" });
-    }
-
-    restaurant.image = result.secure_url;
-    restaurant.profileImage = result.secure_url;
-    await restaurant.save();
-
+    // ✅ Only return the image URL - do NOT update restaurant profile
+    // The caller (product form, profile form, etc.) will decide what to do with the URL
     res.json({
       success: true,
       url: result.secure_url,
-      data: restaurant,
+      image: result.secure_url,
     });
   } catch (error) {
     console.error("Upload controller error:", error.message);

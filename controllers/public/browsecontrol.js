@@ -115,3 +115,121 @@ exports.trackDeliveryClick = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ─── Get Restaurant Menu (products by categories - public) ─
+exports.getRestaurantMenu = async (req, res) => {
+  try {
+    const { restaurantId } = req.params;
+    const { searchTerm = "" } = req.query;
+
+    const Category = require("../../models/category");
+    const Product = require("../../models/product");
+
+    // Verify restaurant exists and is approved
+    const restaurant = await Restaurant.findOne({
+      _id: restaurantId,
+      isApproved: true,
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
+    // Get all categories for the restaurant
+    const categories = await Category.find({
+      restaurant: restaurantId,
+      isActive: true,
+    }).sort({ displayOrder: 1, createdAt: 1 });
+
+    // Get all products for the restaurant
+    let productsQuery = {
+      restaurant: restaurantId,
+      isAvailable: true,
+    };
+
+    if (searchTerm) {
+      productsQuery.$or = [
+        { name: { $regex: searchTerm, $options: "i" } },
+        { description: { $regex: searchTerm, $options: "i" } },
+      ];
+    }
+
+    const products = await Product.find(productsQuery)
+      .populate("category", "name icon description displayOrder")
+      .exec();
+
+    // Organize products by category
+    const menuByCategory = categories.map((category) => ({
+      _id: category._id,
+      name: category.name,
+      description: category.description,
+      icon: category.icon,
+      displayOrder: category.displayOrder,
+      products: products.filter(
+        (p) => p.category?._id?.toString() === category._id.toString(),
+      ),
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        restaurant: {
+          _id: restaurant._id,
+          fullName: restaurant.fullName,
+          image: restaurant.image,
+          rating: restaurant.rating,
+          reviewCount: restaurant.reviewCount,
+          address: restaurant.address,
+        },
+        categories: menuByCategory.filter((cat) => cat.products.length > 0),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching restaurant menu:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ─── Track Category View (public) ──────────────────────────
+exports.trackCategoryView = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    const Category = require("../../models/category");
+
+    const category = await Category.findByIdAndUpdate(
+      categoryId,
+      {
+        $inc: { viewCount: 1 },
+        lastViewedAt: new Date(),
+      },
+      { new: true },
+    );
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        viewCount: category.viewCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error tracking category view:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
