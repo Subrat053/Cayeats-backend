@@ -7,6 +7,8 @@ const adminSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { type: String, default: "admin" },
     isActive: { type: Boolean, default: true },
+    resetCode: { type: String },
+    resetCodeExpires: { type: Date },
   },
   { timestamps: true },
 );

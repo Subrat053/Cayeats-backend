@@ -61,6 +61,8 @@ const RestaurantSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     }, // ✅ set to false when restaurant is deleted by admin
+    resetCode: { type: String },
+    resetCodeExpires: { type: Date },
   },
 
   { timestamps: true },

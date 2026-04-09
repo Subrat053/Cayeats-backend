@@ -151,3 +151,39 @@ exports.sendReportIssueEmail = async ({
     html,
   });
 };
+
+exports.sendPasswordResetEmail = async ({ email, fullName, code }) => {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error("Missing SMTP_USER or SMTP_PASS in environment");
+  }
+
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const subject = "CayEats Password Reset Code";
+
+  const text = [
+    `Hello ${fullName || ""}`.trim(),
+    "",
+    "We received a request to reset your CayEats password.",
+    `Your reset code is: ${code}`,
+    "",
+    "This code expires in 15 minutes.",
+    "If you did not request this, you can ignore this email.",
+  ].join("\n");
+
+  const html = `
+    <h2>Password Reset Code</h2>
+    <p>Hello ${escapeHtml(fullName || "there")},</p>
+    <p>We received a request to reset your CayEats password.</p>
+    <p><strong>Your reset code is: ${escapeHtml(code)}</strong></p>
+    <p>This code expires in 15 minutes.</p>
+    <p>If you did not request this, you can ignore this email.</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject,
+    text,
+    html,
+  });
+};

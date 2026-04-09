@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema(
       default: "customer",
     },
     isActive: { type: Boolean, default: true },
+    resetCode: { type: String },
+    resetCodeExpires: { type: Date },
   },
   { timestamps: true },
 );
