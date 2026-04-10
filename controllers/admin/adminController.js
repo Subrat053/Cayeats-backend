@@ -7,11 +7,19 @@ const BannerAd = require("../../models/bannerad");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const normalizeEmail = (email) => String(email || "").trim();
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // ─── Admin Login ──────────────────────────────────────────
 exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const admin = await Admin.findOne({ email });
+
+    const normalizedEmail = normalizeEmail(email);
+    const admin = await Admin.findOne({
+      email: new RegExp(`^${escapeRegex(normalizedEmail)}$`, "i"),
+    });
     if (!admin) {
       return res
         .status(401)
