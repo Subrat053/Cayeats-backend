@@ -306,3 +306,44 @@ exports.getDeliveryClicks = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ─── Update Delivery Provider URL ──────────────────────────
+exports.updateRestaurantDeliveryProviders = async (req, res) => {
+  try {
+    const { providerName, orderUrl } = req.body;
+
+    if (!providerName || !orderUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "Provider name and order URL are required",
+      });
+    }
+
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: {
+          "deliveryProviders.$[elem].orderUrl": orderUrl,
+        },
+      },
+      {
+        arrayFilters: [{ "elem.providerName": providerName }],
+        new: true,
+      },
+    );
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Restaurant not found" });
+    }
+
+    res.json({
+      success: true,
+      message: `${providerName} link updated successfully`,
+      data: restaurant.deliveryProviders,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

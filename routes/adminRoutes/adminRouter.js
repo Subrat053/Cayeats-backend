@@ -85,6 +85,12 @@ router.get(
   adminOnly,
   ctrl.getDeliveryProviders,
 );
+router.post(
+  "/delivery-providers",
+  protect,
+  adminOnly,
+  ctrl.createDeliveryProvider,
+);
 
 //updations of admin on pricing settings
 router.get("/settings", protect, adminOnly, getSettings);

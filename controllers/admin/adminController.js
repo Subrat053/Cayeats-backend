@@ -4,6 +4,7 @@ const Restaurant = require("../../models/restaurant");
 const Transaction = require("../../models/transaction");
 const TonightsCraving = require("../../models/tonightcravings");
 const BannerAd = require("../../models/bannerad");
+const DeliveryProvider = require("../../models/DeliveryProvider");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -460,10 +461,27 @@ exports.getAnalytics = async (req, res) => {
 // ─── Delivery Providers ───────────────────────────────────
 exports.getDeliveryProviders = async (req, res) => {
   try {
+    // Get providers from DeliveryProvider collection
+    const providers = await DeliveryProvider.find({ isActive: true }).lean();
     const restaurants = await Restaurant.find({}, "deliveryProviders fullName");
 
     // aggregate all unique providers across all restaurants
     const providerMap = {};
+
+    // Add database providers first
+    providers.forEach((p) => {
+      providerMap[p.name] = {
+        name: p.name,
+        website: p.website,
+        contactEmail: p.contactEmail,
+        contactPhone: p.contactPhone,
+        commission: p.commission,
+        totalClicks: p.totalClicks || 0,
+        restaurants: p.restaurantCount || 0,
+      };
+    });
+
+    // Aggregate from restaurants and update counts
     restaurants.forEach((r) => {
       r.deliveryProviders?.forEach((p) => {
         if (!providerMap[p.providerName]) {
@@ -480,6 +498,71 @@ exports.getDeliveryProviders = async (req, res) => {
 
     res.json({ success: true, data: Object.values(providerMap) });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Create new delivery provider
+exports.createDeliveryProvider = async (req, res) => {
+  try {
+    const { name, website, contactEmail, contactPhone, commission, notes } =
+      req.body;
+
+    if (!name?.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Provider name is required" });
+    }
+
+    // Check if provider already exists
+    const existing = await DeliveryProvider.findOne({
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+    });
+    if (existing) {
+      return res
+        .status(409)
+        .json({ success: false, message: "This provider already exists" });
+    }
+
+    const newProvider = new DeliveryProvider({
+      name: name.trim(),
+      website: website || "",
+      contactEmail: contactEmail || "",
+      contactPhone: contactPhone || "",
+      commission: parseFloat(commission) || 0,
+      notes: notes || "",
+      isActive: true,
+      totalClicks: 0,
+      restaurantCount: 0,
+    });
+
+    await newProvider.save();
+
+    // Add this provider to all active, approved restaurants
+    const newProviderEntry = {
+      providerName: newProvider.name,
+      orderUrl: "", // admin can set this later
+      isPreferred: false,
+      clickCount: 0,
+    };
+
+    await Restaurant.updateMany(
+      { isActive: true, isApproved: true },
+      { $push: { deliveryProviders: newProviderEntry } },
+    );
+
+    res.status(201).json({
+      success: true,
+      message:
+        "Delivery provider created successfully and added to all active restaurants",
+      data: newProvider,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res
+        .status(409)
+        .json({ success: false, message: "This provider already exists" });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };

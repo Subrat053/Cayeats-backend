@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Restaurant = require("../../models/restaurant");
+const DeliveryProvider = require("../../models/DeliveryProvider");
 const Order = require("../../models/order");
 
 // ─── Register Restaurant ──────────────────────────────────
@@ -24,10 +25,22 @@ exports.registerRestaurant = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Get all active delivery providers
+    const activeProviders = await DeliveryProvider.find({
+      isActive: true,
+    }).lean();
+    const deliveryProviders = activeProviders.map((p) => ({
+      providerName: p.name,
+      orderUrl: "",
+      isPreferred: false,
+      clickCount: 0,
+    }));
+
     const newRestaurant = new Restaurant({
       fullName,
       email,
       password: hashedPassword,
+      deliveryProviders,
       subscription: {
         plan: null,
         startDate: null,

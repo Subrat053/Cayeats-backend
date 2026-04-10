@@ -15,6 +15,7 @@ const {
   toggleAutoRenew,
   getBilling,
   getDeliveryClicks,
+  updateRestaurantDeliveryProviders,
 } = require("../../controllers/restaurant/dashboardController.js");
 const {
   getFeaturedListingStatus,
@@ -109,6 +110,13 @@ router.put(
 );
 router.get("/billing", protect, restaurantOnly, getBilling);
 router.get("/delivery-clicks", protect, restaurantOnly, getDeliveryClicks);
+router.put(
+  "/delivery-providers",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  updateRestaurantDeliveryProviders,
+);
 router.post(
   "/upload",
   protect,
