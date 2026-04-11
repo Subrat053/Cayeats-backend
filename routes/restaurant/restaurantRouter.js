@@ -16,6 +16,9 @@ const {
   getBilling,
   getDeliveryClicks,
   updateRestaurantDeliveryProviders,
+  addMenuImage,
+  deleteMenuImage,
+  getMenuImages,
 } = require("../../controllers/restaurant/dashboardController.js");
 const {
   getFeaturedListingStatus,
@@ -116,6 +119,21 @@ router.put(
   restaurantOnly,
   approvalRequired,
   updateRestaurantDeliveryProviders,
+);
+router.get("/menu-images", protect, restaurantOnly, getMenuImages);
+router.post(
+  "/menu-images",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  addMenuImage,
+);
+router.delete(
+  "/menu-images",
+  protect,
+  restaurantOnly,
+  approvalRequired,
+  deleteMenuImage,
 );
 router.post(
   "/upload",

@@ -1,3 +1,4 @@
+const cloudinary = require("cloudinary").v2;
 const Restaurant = require("../../models/restaurant.js");
 const Transaction = require("../../models/transaction.js");
 
@@ -342,6 +343,113 @@ exports.updateRestaurantDeliveryProviders = async (req, res) => {
       success: true,
       message: `${providerName} link updated successfully`,
       data: restaurant.deliveryProviders,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── Add Menu Image ────────────────────────────────────────
+exports.addMenuImage = async (req, res) => {
+  try {
+    const { imageUrl, publicId } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "Image URL is required",
+      });
+    }
+
+    // Store both URL and publicId for future deletion
+    const menuImageObj = {
+      url: imageUrl,
+      publicId: publicId || "", // publicId may not always be provided
+    };
+
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      req.user._id,
+      { $push: { menuImages: menuImageObj } },
+      { new: true },
+    ).select("-password");
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Restaurant not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Menu image added successfully",
+      data: restaurant.menuImages,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── Delete Menu Image ─────────────────────────────────────
+exports.deleteMenuImage = async (req, res) => {
+  try {
+    const { imageUrl, publicId } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "Image URL is required",
+      });
+    }
+
+    // Try to delete from Cloudinary if publicId is provided
+    if (publicId) {
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (error) {
+        console.error("Cloudinary deletion error:", error);
+        // Continue anyway - we'll still remove from database
+      }
+    }
+
+    // Remove from database
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      req.user._id,
+      { $pull: { menuImages: { url: imageUrl } } },
+      { new: true },
+    ).select("-password");
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Restaurant not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Menu image deleted successfully",
+      data: restaurant.menuImages,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── Get Menu Images ───────────────────────────────────────
+exports.getMenuImages = async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findById(req.user._id).select(
+      "menuImages",
+    );
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Restaurant not found" });
+    }
+
+    res.json({
+      success: true,
+      data: restaurant.menuImages || [],
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

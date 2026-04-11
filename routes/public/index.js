@@ -7,6 +7,7 @@ const {
   trackDeliveryClick,
   getRestaurantMenu,
   trackCategoryView,
+  getPublicSettings,
 } = require("../../controllers/public/browsecontrol");
 const {
   submitContactForm,
@@ -21,6 +22,7 @@ router.get("/restaurants/:restaurantId/menu", getRestaurantMenu);
 router.post("/categories/:categoryId/track", trackCategoryView); // Track category view
 router.get("/categories", getCuisineCategories);
 router.post("/track-click", trackDeliveryClick); // ✅ delivery button analytics
+router.get("/settings", getPublicSettings); // ✅ Public settings (currency, etc)
 router.post("/contact", submitContactForm);
 router.post("/general-contact", submitGeneralContact);
 router.post("/report-issue", submitReportIssue);

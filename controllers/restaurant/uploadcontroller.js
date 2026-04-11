@@ -28,9 +28,43 @@ exports.uploadImage = async (req, res) => {
       success: true,
       url: result.secure_url,
       image: result.secure_url,
+      publicId: result.public_id, // ✅ Also return public_id for deletion purposes
     });
   } catch (error) {
     console.error("Upload controller error:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── Delete Image from Cloudinary ─────────────────────────
+exports.deleteImage = async (req, res) => {
+  try {
+    const { publicId } = req.body;
+
+    if (!publicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Public ID is required",
+      });
+    }
+
+    // Delete from Cloudinary
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    if (result.result === "ok") {
+      res.json({
+        success: true,
+        message: "Image deleted successfully",
+      });
+    } else {
+      res.json({
+        success: true,
+        message: "Image record removed",
+        // Still return success even if Cloudinary deletion had issues
+      });
+    }
+  } catch (error) {
+    console.error("Delete image error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };

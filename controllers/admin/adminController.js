@@ -7,6 +7,10 @@ const BannerAd = require("../../models/bannerad");
 const DeliveryProvider = require("../../models/DeliveryProvider");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const {
+  sendRestaurantApprovalEmail,
+  sendRestaurantRejectionEmail,
+} = require("../../utils/mailer");
 
 const normalizeEmail = (email) => String(email || "").trim();
 
@@ -156,6 +160,18 @@ exports.approveRestaurant = async (req, res) => {
     );
     if (!restaurant)
       return res.status(404).json({ success: false, message: "Not found" });
+
+    // Send approval email to restaurant owner
+    try {
+      await sendRestaurantApprovalEmail({
+        email: restaurant.email,
+        restaurantName: restaurant.fullName,
+      });
+    } catch (emailError) {
+      console.error("Failed to send approval email:", emailError.message);
+      // Don't fail the request if email fails - the approval already went through
+    }
+
     res.json({ success: true, data: restaurant });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -164,6 +180,7 @@ exports.approveRestaurant = async (req, res) => {
 
 exports.rejectRestaurant = async (req, res) => {
   try {
+    const { reason } = req.body;
     const restaurant = await Restaurant.findByIdAndUpdate(
       req.params.id,
       { isApproved: false, isVerified: false },
@@ -171,6 +188,21 @@ exports.rejectRestaurant = async (req, res) => {
     );
     if (!restaurant)
       return res.status(404).json({ success: false, message: "Not found" });
+
+    // Send rejection email to restaurant owner
+    try {
+      await sendRestaurantRejectionEmail({
+        email: restaurant.email,
+        restaurantName: restaurant.fullName,
+        reason:
+          reason ||
+          "Your application does not meet our current requirements. Please contact support for more information.",
+      });
+    } catch (emailError) {
+      console.error("Failed to send rejection email:", emailError.message);
+      // Don't fail the request if email fails
+    }
+
     res.json({ success: true, data: restaurant });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

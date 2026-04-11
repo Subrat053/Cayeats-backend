@@ -63,6 +63,12 @@ const RestaurantSchema = new mongoose.Schema(
     }, // ✅ set to false when restaurant is deleted by admin
     resetCode: { type: String },
     resetCodeExpires: { type: Date },
+    menuImages: [
+      {
+        url: { type: String }, // ✅ Cloudinary image URL
+        publicId: { type: String }, // ✅ Cloudinary public_id for deletion
+      },
+    ], // ✅ Array of menu image objects
   },
 
   { timestamps: true },

@@ -233,3 +233,35 @@ exports.trackCategoryView = async (req, res) => {
     });
   }
 };
+
+// ─── Get Public Settings (no auth needed) ───────────────
+exports.getPublicSettings = async (req, res) => {
+  try {
+    const Settings = require("../../models/settings");
+    const settings = await Settings.findOne();
+
+    if (!settings) {
+      return res.json({
+        success: true,
+        data: {
+          currency: "USD",
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        currency: settings?.payments?.currency || "USD",
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching public settings:", error);
+    res.json({
+      success: true,
+      data: {
+        currency: "USD",
+      },
+    });
+  }
+};
