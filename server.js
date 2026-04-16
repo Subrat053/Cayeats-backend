@@ -18,17 +18,31 @@ const { allowAdminOrMaster } = require("./middleware/masterAdminMiddleware");
 const app = express();
 
 // ✅ CORS Configuration for Local + Production
-const allowedOrigins = [
+const staticAllowedOrigins = [
   // Local development
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:5174",
   "http://127.0.0.1:5174",
-  // Production URLs from .env (comma-separated)
-  ...(process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
-    : []),
-].filter(Boolean);
+  // Production defaults
+  "https://cayeats.online",
+  "https://www.cayeats.online",
+];
+
+const envAllowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
+  : [];
+
+const allowedOrigins = [...staticAllowedOrigins, ...envAllowedOrigins].filter(
+  Boolean,
+);
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  // Allow subdomains of cayeats.online (e.g., admin.cayeats.online)
+  return /^https:\/\/([a-z0-9-]+\.)?cayeats\.online$/i.test(origin);
+};
 
 // Debug: Log allowed origins in development
 if (process.env.NODE_ENV !== "production") {
@@ -38,12 +52,7 @@ if (process.env.NODE_ENV !== "production") {
 app.use(
   cors({
     origin(origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         return callback(null, true);
       }
 
@@ -62,7 +71,8 @@ app.use(
   express.raw({ type: "application/json" }),
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 connectDB();
 
 app.use("/api/admin", allowAdminOrMaster, adminRouter); //admin routes

@@ -66,6 +66,24 @@ const {
   createOrder,
 } = require("../../controllers/restaurant/orderController.js");
 
+const handleImageUpload = (req, res, next) => {
+  upload.single("image")(req, res, (err) => {
+    if (!err) return next();
+
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({
+        success: false,
+        message: "Image size must be less than 5MB",
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Invalid image upload",
+    });
+  });
+};
+
 router.post(
   "/stripe/webhook",
   express.raw({ type: "application/json" }),
@@ -140,7 +158,7 @@ router.post(
   protect,
   restaurantOnly,
   approvalRequired,
-  upload.single("image"),
+  handleImageUpload,
   uploadImage,
 );
 router.get("/ads/pricing", protect, restaurantOnly, getAdsPricing);
