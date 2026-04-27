@@ -6,10 +6,13 @@ const {
   getRestaurantProfile,
   getRestaurantStats,
 } = require("../../controllers/restaurant/dashboardController.js");
-const { protect } = require("../../middleware/auth.middleware.js");
+const {
+  protect,
+  restaurantOnly,
+} = require("../../middleware/auth.middleware.js");
 
-router.get("/data", protect, getDashboardStats);
-router.get("/profile", protect, getRestaurantProfile);
-router.get("/stats", protect, getRestaurantStats);
+router.get("/data", protect, restaurantOnly, getDashboardStats);
+router.get("/profile", protect, restaurantOnly, getRestaurantProfile);
+router.get("/stats", protect, restaurantOnly, getRestaurantStats);
 
 module.exports = router;

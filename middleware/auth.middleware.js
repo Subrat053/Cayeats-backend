@@ -25,7 +25,7 @@ exports.protect = async (req, res, next) => {
     if (decoded.role === "admin") {
       const admin = await Admin.findById(decoded.id).select("-password");
       if (!admin) return res.status(401).json({ message: "Admin not found" });
-      if (!admin.isActive)
+      if (!admin.isActive)d
         return res.status(401).json({ message: "Admin is inactive" });
       req.user = { ...admin.toObject(), role: "admin" };
       return next();
