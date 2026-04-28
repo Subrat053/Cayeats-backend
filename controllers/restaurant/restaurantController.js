@@ -36,11 +36,23 @@ exports.registerRestaurant = async (req, res) => {
       clickCount: 0,
     }));
 
+    // ✅ Initialize default opening hours (9 AM - 9 PM, all days open)
+    const defaultHours = {
+      monday: { open: "09:00", close: "21:00", closed: false },
+      tuesday: { open: "09:00", close: "21:00", closed: false },
+      wednesday: { open: "09:00", close: "21:00", closed: false },
+      thursday: { open: "09:00", close: "21:00", closed: false },
+      friday: { open: "09:00", close: "21:00", closed: false },
+      saturday: { open: "09:00", close: "21:00", closed: false },
+      sunday: { open: "09:00", close: "21:00", closed: false },
+    };
+
     const newRestaurant = new Restaurant({
       fullName,
       email,
       password: hashedPassword,
       deliveryProviders,
+      openingHours: defaultHours,
       subscription: {
         plan: null,
         startDate: null,

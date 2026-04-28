@@ -45,6 +45,7 @@ exports.updateRestaurantProfile = async (req, res) => {
       "instagram",
       "deliveryProviders",
       "profileImage",
+      "openingHours", // ✅ Allow restaurants to update their opening hours
     ];
     const updates = {};
     allowed.forEach((field) => {
