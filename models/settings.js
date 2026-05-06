@@ -145,6 +145,14 @@ const settingsSchema = new mongoose.Schema(
         },
       ],
     },
+    contact: {
+      email: { type: String, default: "info@cayeats.com" },
+      phone: { type: String, default: "+1 (345) 999-9999" },
+      address: {
+        type: String,
+        default: "George Town, Grand Cayman, Cayman Islands",
+      },
+    },
   },
   { timestamps: true },
 );

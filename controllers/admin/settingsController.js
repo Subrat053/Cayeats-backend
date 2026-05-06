@@ -98,14 +98,28 @@ exports.getFooterSettings = async (req, res) => {
       ],
     };
 
+    const defaultContact = {
+      email: "info@cayeats.com",
+      phone: "+1 (345) 999-9999",
+      address: "George Town, Grand Cayman, Cayman Islands",
+    };
+
     let settings = await Settings.findOne();
 
     // If no settings exist, create with defaults
     if (!settings) {
-      settings = await Settings.create({ footer: defaultFooter });
+      settings = await Settings.create({
+        footer: defaultFooter,
+        contact: defaultContact,
+      });
     } else if (!settings.footer) {
       // If footer doesn't exist in settings, add it
       settings.footer = defaultFooter;
+      await settings.save();
+    }
+
+    if (!settings.contact) {
+      settings.contact = defaultContact;
       await settings.save();
     }
 
@@ -135,6 +149,7 @@ exports.getFooterSettings = async (req, res) => {
         settings.footer.legal.length > 0
           ? settings.footer.legal
           : defaultFooter.legal,
+      contact: settings.contact || defaultContact,
     };
 
     console.log("Footer data returned:", footerData);
@@ -148,14 +163,14 @@ exports.getFooterSettings = async (req, res) => {
 // Update footer settings (admin only)
 exports.updateFooterSettings = async (req, res) => {
   try {
-    console.log("Received footer update:", req.body.footer);
+    console.log("Received footer update:", req.body);
 
     let settings = await Settings.findOne();
     if (!settings) {
       settings = new Settings();
     }
 
-    // Ensure we have all four sections when updating
+    // Update footer links if provided
     if (req.body.footer) {
       settings.footer = {
         discover: req.body.footer.discover || [],
@@ -165,10 +180,32 @@ exports.updateFooterSettings = async (req, res) => {
       };
     }
 
+    // Update contact info if provided
+    if (req.body.contact) {
+      settings.contact = {
+        email:
+          req.body.contact.email ||
+          settings.contact?.email ||
+          "info@cayeats.com",
+        phone:
+          req.body.contact.phone ||
+          settings.contact?.phone ||
+          "+1 (345) 999-9999",
+        address:
+          req.body.contact.address ||
+          settings.contact?.address ||
+          "George Town, Grand Cayman, Cayman Islands",
+      };
+    }
+
     await settings.save();
     console.log("Footer updated and saved:", settings.footer);
+    console.log("Contact info updated and saved:", settings.contact);
 
-    res.json({ success: true, data: settings.footer });
+    res.json({
+      success: true,
+      data: { footer: settings.footer, contact: settings.contact },
+    });
   } catch (error) {
     console.error("Error updating footer:", error);
     res.status(500).json({ success: false, message: error.message });
